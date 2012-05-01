@@ -1,0 +1,320 @@
+	function createLine(char, cnt) {
+		cnt = (cnt === undefined) ? 80 : cnt;
+		var res = new String();
+		for(var i = 0; i < cnt; i++)
+			res += char;
+		return res;
+	}
+	function expandArray(colapsed) {
+		var res = [];
+		for (var i = 0; i < colapsed.length; i++) {
+			var val = colapsed[i][0];
+			var tms = colapsed[i][1];
+			for (var j = 0; j < tms; j++)
+				res[res.length] = val;
+		}
+		return res;
+	}
+	function getCursorPosition(e) {
+	    var x;
+	    var y;
+	    if (e.pageX || e.pageY) {
+	      x = e.pageX;
+	      y = e.pageY;
+	    } else {
+	      x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+	      y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+	    }
+		x -= canvas.offsetLeft;
+		y -= canvas.offsetTop;
+		var cell = [Math.floor(x/metrics.width),Math.floor(y/metrics.height) ];
+    	return cell;
+	}
+
+	/*
+	 * global variables
+	 */
+	// display console or not
+	var isConsole = false;
+
+	// display grid or not
+	var isGrid = false;
+
+	// time interval id
+	var timeInterval = null;
+
+	// current paner, default left
+	var isLeft = true;
+	// current selections
+	var leftPosition = 0;
+	var leftOffset = 0;
+	var rightPosition = 0;
+	var rightOffset = 0;
+
+	// canvas and context
+	var canvas = null;
+	var ctx = null;
+
+	// current metrics
+	var metrics = null;
+
+	// list of buffers
+	var buffers = {
+  		fm: 1,
+  		console: 2,
+		screensaver: 3
+	};
+	// current buffer
+	var curBuffer = buffers.fm;
+
+	function init() {
+		canvas = document.getElementById('canva');
+		if (canvas.getContext){
+			var font = "11pt Lucida Console";
+			ctx = canvas.getContext('2d');
+			ctx.font = font;
+			metrics = ctx.measureText('T');
+			metrics.height = metrics.width * 1.7;
+			// console.log(metrics);
+			// metrics.height = canvas.style.lineHeight;
+			$("#canva").attr("width", metrics.width * 80);
+			$("#canva").attr("height", metrics.height * 25);
+			ctx.font = font;
+			ctx.textBaseline = "top";
+
+			// draw default screen
+			refresh();
+			//
+			$("#canva").animate({
+				width: metrics.width * 80,
+				height: metrics.height * 25,
+				},300,"linear", function() {
+			});
+			canvas.addEventListener("click", function(e) {
+ 				var cell = getCursorPosition(e);
+				console.log(cell);
+				//
+				draw(cell[0], cell[1], [["\u2665",1]], [["#F00",1]]);
+			}, false);
+			return true;
+		} else
+			return true
+	}
+	function strToArray(str) {
+		var res = [];
+		var lastChar = null;
+		for (var i = 0; i < str.length; i++) {
+			if (str[i] !== lastChar) {
+    			res[res.length] = [str[i],1];
+			} else {
+    			res[res.length-1][1] += 1;
+			}
+			lastChar = str[i];
+		}
+		return res;
+	}
+	function refresh() {
+		switch (curBuffer) {
+			case buffers.fm:
+				drawMain();
+				break;
+			case buffers.console:
+				drawConsole();
+				break;
+			case buffers.screensaver:
+				drawScreensaver();
+				break;
+		}
+	}
+	function clear() {
+	    ctx.fillStyle = "rgba(0, 0, 200, 1)";
+        ctx.fillRect (0, 0, canvas.width, canvas.height);
+	}
+	function draw(xo, yo, chars, colors) {
+		chars = expandArray(chars);
+		colors = expandArray(colors);
+		xo = (xo === undefined) ? 0 : metrics.width * xo;
+		yo = (yo === undefined) ? 0 : metrics.height * yo;
+		var dxd = 0 + xo;
+		var dyd = 0 + yo;
+		var dx = dxd;
+		var dy = dyd;
+		for (var i = 0; i < chars.length; i++) {
+	    	ctx.fillStyle = colors[i];
+			ctx.fillText(chars[i], dx, dy);
+			if ((i+1+dxd)%80 == 0) {
+				dy += metrics.height;
+				dx = dxd;
+			} else {
+				dx += metrics.width;
+			}
+		}
+	}
+
+	function drawSkeleton() {
+		var bufferChars = mainChars;
+		var bufferColors = mainColors;
+		draw(0, 0, bufferChars, bufferColors);
+	}
+	function drawCL() {
+		draw(0, 0, [["\u2588",2000]], [["#0FF",80],["#000",1920]]);
+	}
+
+	function drawTime() {
+		var isDbldot = false;
+		if (!timeInterval) {
+			timeInterval = setInterval(function(){
+				var now = new Date();
+				var h = now.getHours();
+				var m = now.getMinutes();
+				h = (h < 10) ? "0"+h : h;
+				m = (m < 10) ? "0"+m : m;
+				var t = h + (isDbldot?" ":":") + m;
+				isDbldot = !isDbldot;
+				draw(75, 0, [["\u2588",5]], [["#0FF",5]]);
+				draw(75, 0, strToArray(t), [["#000",5]]);
+			}, 1000);
+		}
+	}
+
+	function drawGrid() {
+		if (!isGrid) {
+			isGrid = !isGrid;
+			ctx.fillStyle = "Black";
+			for (var y = 0; y < 25; y++) {
+				for (var x = 0; x < 80; x++) {
+					ctx.strokeRect(x*metrics.width, y*metrics.height, metrics.width, metrics.height);
+				}
+			}
+		} else {
+			isGrid = !isGrid;
+			drawMain();
+		}
+	}
+
+	function drawLeftFilelist() {
+		test_data = [
+			{name:"..                         ", perm:"drwe---rwe"},
+			{name:"qwertyui.jpg               ", perm:"drwe---rwe"},
+			{name:"qwertyu2.jpg               ", perm:"d---rwerwe"},
+		];
+		// clear
+		for (var i=0; i<test_data.length; i++) {
+			draw(1, 2+i, [["\u2588",38]], [["rgba(0,0,200,1)",38]]);
+		}
+		// draw
+		for (var i=0; i<test_data.length; i++) {
+			var t = test_data[i].name + "\u2502" + test_data[i].perm;
+			if (i == leftPosition) {
+				draw(1, 2+i, [["\u2588",38]], [["#0FF",38]]);
+				draw(1, 2+i, strToArray(t), [["#000",38]]);
+			} else {
+				draw(1, 2+i, strToArray(t), [["#0FF",38]]);
+			}
+		}
+	}
+
+	function drawLeftStatus(text) {
+		text = text.substr(0,37);
+		draw(1, 21, strToArray(text), [["#0FF",38]]);
+	}
+
+	function drawRightFilelist() {
+
+	}
+
+	function drawRightStatus(text) {
+		text = text.substr(0,37);
+		draw(41, 21, strToArray(text), [["#0FF",38]]);
+	}
+
+	function drawMain() {
+		clear();
+		drawSkeleton();
+		drawLeftFilelist();
+		drawRightFilelist();
+		drawTime();
+	}
+
+	function drawConsole() {
+		clear();
+		drawCL();
+		drawTime();
+	}
+
+	function Asc(String) {
+		return String.charCodeAt(0);
+	}
+	
+	function Chr(AsciiNum) {
+		return String.fromCharCode(AsciiNum);
+	}
+	
+	$(document).ready(function(){                            
+		if (init()) {
+			var keyStr = new String();
+			$("body").keypress(function(e){
+				switch (curBuffer ) {
+					case buffers.fm:
+						if (e.keyCode) {
+							switch(e.keyCode) {
+								case 38: // up 
+									leftPosition = Math.max(leftPosition-1, 0);
+									drawLeftFilelist();
+									return;
+									break;
+								case 40: // down 
+									leftPosition = Math.min(leftPosition+1, 10);
+									drawLeftFilelist();
+									return;
+									break;
+								case 37: // left
+									break;
+								case 39: // right 
+									break;
+							}
+						}
+						break;
+					case buffers.console:
+						break;
+					case buffers.screensaver:
+						break;
+				}
+				//
+				if (e.ctrlKey && e.charCode == 0x67) {
+					drawGrid();
+					return false;
+				}
+				if (e.ctrlKey && e.charCode == 0x6F) {
+					if (curBuffer !== buffers.console) {
+						curBuffer = buffers.console;
+					} else {
+						curBuffer = buffers.fm;
+					}
+					refresh();
+					//e.preventDefault();
+					return false;
+				}
+				if (e.charCode && keyStr.length < 80) {
+					keyStr += Chr(e.charCode);
+				}
+				if (e.keyCode) {
+					switch(e.keyCode) {
+						case 8:		// backspace
+							keyStr = keyStr.substr(0,keyStr.length-1);
+							break;
+						case 13:	// enter
+							keyStr = eval(keyStr).toString();
+							//alert(keyStr);
+							break;
+						default:
+							console.log(e.keyCode);
+							break;
+					}
+				}
+				// clear
+				draw(0, 23, [["\u2588",80]], [["#000",80]]);
+				draw(0, 23, strToArray(keyStr), [["#0FF",keyStr.length]]);
+			});
+		}
+	});
