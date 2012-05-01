@@ -9,7 +9,7 @@
 var Network = {
 	//loaded: false,
 	getFiles: function (directory, limit, offset) {
-		var result = null;
+		var result = [];
 		$.ajax({
 			type: "POST",
 			crossDomain: true,
@@ -17,7 +17,7 @@ var Network = {
 			async: false,
 			data: {
 				'method': "filelist",
-				'dir': directory,
+				'param1': directory,
 				'limit': limit,
 				'offset': offset
 			},
@@ -30,23 +30,65 @@ var Network = {
 				} else{
 					result = [];
 				}
-				//Network.loaded = true;
 			},
 			error: function() {
 				result = [];
-				//Network.loaded = true;
 			}
 		});
-		//Network.loaded = false;
 		return result;
 	},
 
-	renameFile: function () {
+	copyFile: function (src, dest) {
+		var result = false;
+		$.ajax({
+			type: "POST",
+			crossDomain: true,
+			url: "http://kino2.dev/admin/options/fm",
+			async: false,
+			data: {
+				'method': "copy",
+				'param1': src,
+				'param2': dest
+			},
+			success: function(data) {
+				if (typeof(data) == "string") {
+					data = $.parseJSON(data);
+				}
+				result = data.success;
+			},
+			error: function() {
+				result = false;
+			}
+		});
+		return result;
+	},
+
+	renameFile: function (src, dest) {
 
 	},
 
-	deleteFile: function () {
-
+	deleteFile: function (src) {
+		var result = false;
+		$.ajax({
+			type: "POST",
+			crossDomain: true,
+			url: "http://kino2.dev/admin/options/fm",
+			async: false,
+			data: {
+				'method': "rm",
+				'param1': src
+			},
+			success: function(data) {
+				if (typeof(data) == "string") {
+					data = $.parseJSON(data);
+				}
+				result = data.success;
+			},
+			error: function() {
+				result = false;
+			}
+		});
+		return result;
 	}
 
 

@@ -86,6 +86,18 @@
 		return false;
 	};
 
+
+	filePanel.prototype.fileOnly = function() {
+		if (this.countFiles) {
+			return this.files[this.position].name;
+		}
+		return false;
+	};
+
+	filePanel.prototype.dirOnly = function() {
+		return this.directory;
+	};
+
 	filePanel.prototype.file = function() {
 		if (this.countFiles) {
 			return this.directory +"/"+ this.files[this.position].name;
@@ -227,6 +239,9 @@
 		}
 	}
 
+	/**
+	 * Clear all canvas
+	 */
 	function clear() {
 		ctx.fillStyle = Colors.background;
 		ctx.fillRect (0, 0, canvas.width, canvas.height);
@@ -317,6 +332,7 @@
 		drawSkeleton();
 		leftPanel.draw();
 		rightPanel.draw();
+		drawConsoleLine();
 		drawTime();
 	}
 
@@ -332,6 +348,7 @@
 	}
 
 	function optimizeDir(str) {
+		//todo: improve regexp
 		var regexp = /\/\w+\/\.\./;		// << like boobs :(
 		while (regexp.test(str)) {
 			str = str.replace(regexp, "");
@@ -378,9 +395,33 @@
 									break;
 							}
 						}
-						if (e.ctrlKey && e.keyCode == 13) {
-							consoleLine = (isLeft) ? leftPanel.file().name : rightPanel.file().name;
+						if (e.ctrlKey && e.keyCode == 13) {		// ctrl+return
+							consoleLine = (isLeft) ? leftPanel.file() : rightPanel.file();
 							drawConsoleLine();
+							return false;
+						}
+						if (e.ctrlKey && e.charCode == 53) {	// ctrl+5
+							if (isLeft) {
+								Network.copyFile(leftPanel.file(), rightPanel.dirOnly()+"/"+leftPanel.fileOnly());
+								rightPanel.load(Network.getFiles(rightPanel.dirOnly()));
+								rightPanel.draw();
+							} else {
+								Network.copyFile(rightPanel.file(), leftPanel.dirOnly()+"/"+rightPanel.fileOnly());
+								leftPanel.load(Network.getFiles(leftPanel.dirOnly()));
+								leftPanel.draw();
+							}
+							return false;
+						}
+						if (e.ctrlKey && e.charCode == 56) {	// ctrl+8
+							if (isLeft) {
+								Network.deleteFile(leftPanel.file());
+								leftPanel.load(Network.getFiles(leftPanel.dirOnly()));
+								leftPanel.draw();
+							} else {
+								Network.deleteFile(rightPanel.file());
+								rightPanel.load(Network.getFiles(rightPanel.dirOnly()));
+								rightPanel.draw();
+							}
 							return false;
 						}
 						break;
