@@ -129,9 +129,9 @@
 				break;
 			if (i == this.position && this.isActive()) {
 				draw(1+this.drawOffset, 2+i-this.offset, [["\u2588",38]], [["#0FF",38]]);
-				draw(1+this.drawOffset, 2+i-this.offset, strToArray(this.cachedFiles[i]), [["#000",38]]);
+				draw(1+this.drawOffset, 2+i-this.offset, strToArray(this.cachedFiles[i], 38), [["#000",38]]);
 			} else {
-				draw(1+this.drawOffset, 2+i-this.offset, strToArray(this.cachedFiles[i]), [["#0FF",38]]);
+				draw(1+this.drawOffset, 2+i-this.offset, strToArray(this.cachedFiles[i], 38), [["#0FF",38]]);
 			}
 		}
 	};
@@ -208,9 +208,11 @@
 			return false;
 		}
 	}
-	function strToArray(str) {
+	function strToArray(str, strLength) {
+
 		var res = [];
 		var lastChar = null;
+
 		for (var i = 0; i < str.length; i++) {
 			if (str[i] !== lastChar) {
 				res[res.length] = [str[i],1];
@@ -219,6 +221,13 @@
 			}
 			lastChar = str[i];
 		}
+
+        // догнать до нужной длинны
+        if (str.length < strLength) {
+            var spaceLength = strLength - str.length;
+            res[res.length] = [' ', spaceLength];
+        }
+
 		return res;
 	}
 
@@ -251,7 +260,9 @@
 		chars = expandArray(chars);
 		colors = expandArray(colors);
 		if (chars.length !== colors.length)
-			throw "Chars length not equal to colors length";
+        {
+			throw new Error("Chars length not equal to colors length");
+        }
 		max = (max === undefined) ? 80 : max;
 		var dxd = 0 + ((xo === undefined) ? 0 : xo);
 		var dyd = 0 + ((yo === undefined) ? 0 : yo);
@@ -377,7 +388,6 @@
 									isLeft = !isLeft;
 									drawLeftRightChange();
 									return false;
-									break;
 								case 13:	// return
 									if (isLeft) {
 										var dir = leftPanel.dir();
@@ -450,11 +460,14 @@
 					case buffers.screensaver:
 						break;
 				}
-				//
+
+				// Ctrl-G
 				if (e.ctrlKey && e.charCode == 0x67) {
 					drawGrid();
 					return false;
 				}
+
+                // Ctrl-O
 				if (e.ctrlKey && e.charCode == 0x6F) {
 					if (curBuffer !== buffers.console) {
 						curBuffer = buffers.console;
@@ -462,7 +475,7 @@
 						curBuffer = buffers.fm;
 					}
 					refresh();
-					//e.preventDefault();
+
 					return false;
 				}
 			});

@@ -6,20 +6,26 @@
  * To change this template use File | Settings | File Templates.
  */
 
+var FMPath = 'connector/fm.php';
+
 var Network = {
 	//loaded: false,
 	getFiles: function (directory, limit, offset) {
+
 		var result = [];
+
 		$.ajax({
 			type: "POST",
 			crossDomain: true,
-			url: "http://kino2.dev/admin/options/fm",
+			url: FMPath,
 			async: false,
 			data: {
-				'method': "filelist",
-				'param1': directory,
-				'limit': limit,
-				'offset': offset
+				method: "fileList",
+                params: {
+                    dir: directory,
+                    limit: limit,
+                    offset: offset
+                }
 			},
 			success: function(data) {
 				if (typeof(data) == "string") {
@@ -35,20 +41,22 @@ var Network = {
 				result = [];
 			}
 		});
+
 		return result;
 	},
 
 	copyFile: function (src, dest) {
+
 		var result = false;
 		$.ajax({
 			type: "POST",
 			crossDomain: true,
-			url: "http://kino2.dev/admin/options/fm",
+			url: FMPath,
 			async: false,
 			data: {
-				'method': "copy",
-				'param1': src,
-				'param2': dest
+				method: "copy",
+				param1: src,
+				param2: dest
 			},
 			success: function(data) {
 				if (typeof(data) == "string") {
@@ -60,6 +68,7 @@ var Network = {
 				result = false;
 			}
 		});
+
 		return result;
 	},
 
@@ -68,15 +77,16 @@ var Network = {
 	},
 
 	deleteFile: function (src) {
+
 		var result = false;
 		$.ajax({
 			type: "POST",
 			crossDomain: true,
-			url: "http://kino2.dev/admin/options/fm",
+			url: FMPath,
 			async: false,
 			data: {
-				'method': "rm",
-				'param1': src
+				method: "rm",
+				param: src
 			},
 			success: function(data) {
 				if (typeof(data) == "string") {
